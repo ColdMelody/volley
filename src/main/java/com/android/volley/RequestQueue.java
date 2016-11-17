@@ -50,14 +50,14 @@ public class RequestQueue {
 
     /**
      * Staging area for requests that already have a duplicate request in flight.
-     *
+     * 一个已经拥有副本在执行中的requests的暂存区
      * <ul>
      *     <li>containsKey(cacheKey) indicates that there is a request in flight for the given cache
      *          key.</li>
      *     <li>get(cacheKey) returns waiting requests for the given cache key. The in flight request
      *          is <em>not</em> contained in that list. Is null if no requests are staged.</li>
      * </ul>
-     * 一个等待请求的集合，如果一个请求正在被处理并且可以缓存，后续的url相同，将进入此等待队列
+     * 一个等待请求的集合，如果一个请求正在被处理并且可以缓存，后续请求的url相同，将进入此等待队列
      */
     private final Map<String, Queue<Request<?>>> mWaitingRequests =
             new HashMap<String, Queue<Request<?>>>();
@@ -82,7 +82,7 @@ public class RequestQueue {
     private static final int DEFAULT_NETWORK_THREAD_POOL_SIZE = 4;
 
     /** Cache interface for retrieving and storing responses.接受然后缓存请求结果，Volley默认使用的是基于
-     * sdcard的DiskBaseCache。NetworkDispatcher得到请求结果后判断是否需要存储在Cache，CacheDispacher会从
+     * sdcard的DiskBaseCache。NetworkDispatcher得到请求结果后判断是否需要存储在Cache，CacheDispat cher会从
      * Cache中取缓存结果*/
     private final Cache mCache;
 

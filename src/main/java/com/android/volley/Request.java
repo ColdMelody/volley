@@ -43,7 +43,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Supported request methods.
-     * 支持8中http请求方式
+     * 支持8种http请求方式
      */
     public interface Method {
         int DEPRECATED_GET_OR_POST = -1;
@@ -103,7 +103,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      */
     private Cache.Entry mCacheEntry = null;
 
-    /** An opaque token tagging this request; used for bulk cancellation. */
+    /** An opaque token tagging this request; used for bulk cancellation.用于批量取消 */
     private Object mTag;
 
     /**

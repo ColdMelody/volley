@@ -31,6 +31,8 @@ import java.util.concurrent.BlockingQueue;
  * specified {@link Network} interface. Responses are committed to cache, if
  * eligible, using a specified {@link Cache} interface. Valid responses and
  * errors are posted back to the caller via a {@link ResponseDelivery}.
+ * 从mNetworkQueue中获取request并使用Network执行，如果设置缓存则使用Cache缓存，最后使用
+ * ResponseDelivery分发。这个类只负责调度，使用了单一原则和依赖倒置原则
  */
 public class NetworkDispatcher extends Thread {
     /** The queue of requests to service. */
@@ -72,7 +74,7 @@ public class NetworkDispatcher extends Thread {
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private void addTrafficStatsTag(Request<?> request) {
+    private void addTrafficStatsTag(Request<?> request) {/*api 14，统计通信量bytes*/
         // Tag the request (if API >= 14)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             TrafficStats.setThreadStatsTag(request.getTrafficStatsTag());
@@ -114,6 +116,9 @@ public class NetworkDispatcher extends Thread {
 
                 // If the server returned 304 AND we delivered a response already,
                 // we're done -- don't deliver a second identical response.
+                /* 304:自从上次请求后，请求的网页未修改过。服务器返回此响应时，不会返回网页内容。
+                   如果网页自请求者上次请求后再也没有更改过，您应将服务器配置为返回此响应（称为 If-Modified-Since HTTP 标头）。
+                   服务器可以告诉 Googlebot 自从上次抓取后网页没有变更，进而节省带宽和开销。*/
                 if (networkResponse.notModified && request.hasHadResponseDelivered()) {
                     request.finish("not-modified");
                     continue;
@@ -132,7 +137,7 @@ public class NetworkDispatcher extends Thread {
 
                 // Post the response back.
                 request.markDelivered();
-                //这步没什么问题
+                //这步没什么问题，如果没有自定义Delivery的话，使用ExecutorDelivery
                 mDelivery.postResponse(request, response);
             } catch (VolleyError volleyError) {
                 volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);

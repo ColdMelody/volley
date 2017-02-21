@@ -107,6 +107,7 @@ public class CacheDispatcher extends Thread {
                 }
 
                 // Attempt to retrieve（取回） this item from cache.
+                // 在NetworkDispatch中，将entry作为值放入cache中的
                 Cache.Entry entry = mCache.get(request.getCacheKey());
                 if (entry == null) {
                     request.addMarker("cache-miss");
@@ -138,6 +139,8 @@ public class CacheDispatcher extends Thread {
                     // Soft-expired cache hit. We can deliver the cached response,
                     // but we need to also send the request to the network for
                     // refreshing.
+                    // 未完全过期，可以放入缓存但是不可使用，所以要重新获取一下，放入缓存的原因是下一次不必
+                    // 全部更新缓存，只更新一小部分即可
                     request.addMarker("cache-hit-refresh-needed");
                     request.setCacheEntry(entry);
 

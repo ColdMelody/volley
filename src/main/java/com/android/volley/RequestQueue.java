@@ -82,7 +82,7 @@ public class RequestQueue {
     private static final int DEFAULT_NETWORK_THREAD_POOL_SIZE = 4;
 
     /** Cache interface for retrieving and storing responses.接受然后缓存请求结果，Volley默认使用的是基于
-     * sdcard的DiskBaseCache。NetworkDispatcher得到请求结果后判断是否需要存储在Cache，CacheDispat cher会从
+     * sdcard的DiskBaseCache。NetworkDispatcher得到请求结果后判断是否需要存储在Cache，CacheDispatcher会从
      * Cache中取缓存结果*/
     private final Cache mCache;
 
@@ -93,10 +93,10 @@ public class RequestQueue {
     /** Response delivery mechanism.返回结果分发机制 */
     private final ResponseDelivery mDelivery;
 
-    /** The network dispatchers. 用于处理走网络请求的调度*/
+    /** The network dispatchers. 用于处理走网络请求的调度,一个线程集合*/
     private NetworkDispatcher[] mDispatchers;
 
-    /** The cache dispatcher.用于处理走缓存请求的调度 */
+    /** The cache dispatcher.用于处理走缓存请求的调度，同是线程集合 */
     private CacheDispatcher mCacheDispatcher;
 
     private List<RequestFinishedListener> mFinishedListeners =
@@ -149,7 +149,7 @@ public class RequestQueue {
         mCacheDispatcher = new CacheDispatcher(mCacheQueue, mNetworkQueue, mCache, mDelivery);
         mCacheDispatcher.start();
 
-        // Create network dispatchers (and corresponding threads) up to the pool size.
+        // Create network dispatchers (and corresponding threads) up to the pool size.池的大小是传入的构造器poolsize
         for (int i = 0; i < mDispatchers.length; i++) {
             NetworkDispatcher networkDispatcher = new NetworkDispatcher(mNetworkQueue, mNetwork,
                     mCache, mDelivery);
@@ -233,8 +233,8 @@ public class RequestQueue {
     public <T> Request<T> add(Request<T> request) {
         // Tag the request as belonging to this queue and add it to the set of current requests.
         request.setRequestQueue(this);
-        synchronized (mCurrentRequests) {
-            mCurrentRequests.add(request);
+        synchronized (mCurrentRequests) {/*涉及到网络，一般是在线程中进行的*/
+            mCurrentRequests.add(request);/*因为是set，所以不必担心重复*/
         }
 
         // Process requests in the order they are added.
@@ -242,19 +242,21 @@ public class RequestQueue {
         request.addMarker("add-to-queue");
 
         // If the request is uncacheable, skip the cache queue and go straight to the network.
+        /*shouldCache()设为false，直接放入网络请求*/
         if (!request.shouldCache()) {
             mNetworkQueue.add(request);
             return request;
         }
 
         // Insert request into stage if there's already a request with the same cache key in flight.
+        /*shouldCache()设为true,记录在等待队列中*/
         synchronized (mWaitingRequests) {
             String cacheKey = request.getCacheKey();
             if (mWaitingRequests.containsKey(cacheKey)) {
                 // There is already a request in flight. Queue up.
                 Queue<Request<?>> stagedRequests = mWaitingRequests.get(cacheKey);
                 if (stagedRequests == null) {
-                    stagedRequests = new LinkedList<Request<?>>();
+                    stagedRequests = new LinkedList<Request<?>>();/*链表维护*/
                 }
                 stagedRequests.add(request);
                 mWaitingRequests.put(cacheKey, stagedRequests);
@@ -303,7 +305,7 @@ public class RequestQueue {
                     }
                     // Process all queued up requests. They won't be considered as in flight, but
                     // that's not a problem as the cache has been primed by 'request'.
-                    //加入之后会被缓存请求线程自动处理
+                    //加入之后会被缓存请求线程自动处理，因为最近的相同request已经完成，所以可视为这类request的缓存已经准备好
                     mCacheQueue.addAll(waitingRequests);
                 }
             }

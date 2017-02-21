@@ -48,7 +48,7 @@ import javax.net.ssl.SSLSocketFactory;
  * An {@link HttpStack} based on {@link HttpURLConnection}.
  */
 public class HurlStack implements HttpStack {
-
+    /*在request-body中*/
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
 
     /**
